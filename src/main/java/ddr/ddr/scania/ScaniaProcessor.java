@@ -10,18 +10,27 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.SAXException;
 
 import java.io.*;
+import java.util.HashMap;
 
-/**
- * Created by ddr on 2/11/14.
- */
 public class ScaniaProcessor {
+
+    private final static String[] selectedFields = new String[]{
+            "orderNo", "partNo", "lineNo", "readyToRickUp", "quantity"
+    };
+    private final static HashMap<String, String> headerNames = new HashMap<>(6);
+
+    static {
+        headerNames.put("orderNo", "Zamówienie");
+        headerNames.put("partNo", "Detal");
+        headerNames.put("lineNo", "Linia");
+        headerNames.put("readyToRickUp", "Termin");
+        headerNames.put("quantity", "Ilość");
+    }
 
     private Parser m_parser;
 
-
     public ScaniaProcessor() {
         m_parser = new PDFParser();
-
     }
 
     public void process(String input, String output) throws IOException, TikaException, SAXException {
@@ -46,23 +55,32 @@ public class ScaniaProcessor {
     }
 
     private DeliveryEntry[] parseInput(String input) {
-        System.out.println(input);
-
         return new ScaniaParser().parse(input);
     }
 
     private void writeResults(DeliveryEntry[] entries, String output) throws IOException {
         SimpleCsvWriter writer = new SimpleCsvWriter(output);
 
-        // writer.writeHeaders();
+
+        String[] headers = new String[selectedFields.length];
+        for (int i = 0; i < selectedFields.length; i++)
+            headers[i] = headerNames.get(selectedFields[i]);
+        writer.writeHeaders(headers);
+
         for (DeliveryEntry entry : entries) {
             writer.writeLine(selectFields(entry));
         }
+        writer.close();
     }
 
     private String[] selectFields(DeliveryEntry entry) {
-        return null;
-    }
+        HashMap<String, String> dict = entry.asDict();
 
+        String[] fields = new String[selectedFields.length];
+        for (int i = 0; i < selectedFields.length; i++)
+            fields[i] = dict.get(selectedFields[i]);
+
+        return fields;
+    }
 
 }

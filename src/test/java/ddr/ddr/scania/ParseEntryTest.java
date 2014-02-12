@@ -2,7 +2,6 @@ package ddr.ddr.scania;
 
 
 import ddr.ddr.scania.model.EntryInfo;
-import ddr.ddr.scania.model.HeaderInfo;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -11,9 +10,6 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 
-/**
- * Created by ddr on 2/12/14.
- */
 @RunWith(Parameterized.class)
 public class ParseEntryTest {
 

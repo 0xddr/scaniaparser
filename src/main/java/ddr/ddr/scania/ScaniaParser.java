@@ -4,6 +4,7 @@ import ddr.ddr.scania.model.EntryInfo;
 import ddr.ddr.scania.model.HeaderInfo;
 
 import java.util.ArrayList;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
@@ -11,9 +12,9 @@ public class ScaniaParser {
 
     private final static String header = "(\\d+(\\s+(\\w|\\/)+)+\\s+PCS)";
     private final static String entry = "(.+NEW\\!)";
-    private final static Pattern pattern = Pattern.compile(String.format("^(%s|%s)$", header, entry));
+    private final static Pattern pattern = Pattern.compile(String.format("^((%s|%s))$", header, entry), Pattern.MULTILINE);
     private final static Pattern header_pattern = Pattern.compile(String.format("^%s$", header));
-    private final static Pattern entry_pattern = Pattern.compile(String.format("^%s$", entry));
+    //private final static Pattern entry_pattern = Pattern.compile(String.format("^%s$", entry));
 
     public static HeaderInfo parseHeader(String header) {
         String[] tokens = header.split("\\s+");
@@ -56,23 +57,19 @@ public class ScaniaParser {
 
     public DeliveryEntry[] parse(String input) {
         String[] extracted = extractLines(input);
-
         String[][] sections = prepareSections(extracted);
-
-
         return parseSections(sections);
-
     }
 
     private String[][] prepareSections(String[] lines) {
         ArrayList<String> section = null;
-        ArrayList<String[]> sections = new ArrayList<String[]>(100);
+        ArrayList<String[]> sections = new ArrayList<>(100);
         for (String line : lines) {
 
             if (isHeader(line)) {
                 if (section != null)
                     sections.add(section.toArray(new String[section.size()]));
-                section = new ArrayList<String>(10);
+                section = new ArrayList<>(10);
                 section.add(line);
             } else {
                 section.add(line);
@@ -81,24 +78,38 @@ public class ScaniaParser {
         return sections.toArray(new String[sections.size()][]);
     }
 
-    private String[] extractLines(String input) {
-        return new String[0];
+    public static String[] extractLines(String input) {
+        ArrayList<String> lines = new ArrayList<>(200);
+
+        Matcher matcher = pattern.matcher(input);
+        while(matcher.find()) {
+            lines.add(matcher.group());
+        }
+        return lines.toArray(new String[lines.size()]);
     }
 
-    private DeliveryEntry createEntry(String[] section) {
-        return new DeliveryEntry();
+    private ArrayList<DeliveryEntry> createEntries(String[] section) {
+        HeaderInfo headerInfo = parseHeader(section[0]);
+
+        ArrayList<DeliveryEntry> entries = new ArrayList<>(5);
+
+        for (int i = 1; i < section.length; i++) {
+            EntryInfo entry = parserEntry(section[i]);
+
+            DeliveryEntry deliveryEntry = new DeliveryEntry(headerInfo, entry);
+            entries.add(deliveryEntry);
+        }
+
+        return entries;
     }
 
     private DeliveryEntry[] parseSections(String[][] sections) {
-
-        ArrayList<DeliveryEntry> entries = new ArrayList<DeliveryEntry>(200);
+        ArrayList<DeliveryEntry> entries = new ArrayList<>(200);
 
         for (String[] section : sections) {
-            DeliveryEntry entry = createEntry(section);
+            ArrayList<DeliveryEntry> newEntries = createEntries(section);
 
-            if (entry != null) {
-                entries.add(entry);
-            }
+            entries.addAll(newEntries);
         }
 
         return entries.toArray(new DeliveryEntry[entries.size()]);

@@ -36,8 +36,11 @@ public class SimpleCsvWriter {
             if (i > 0)
                 sb.append(SEPARATOR);
 
-            if (fields[i] != null)
+            if (fields[i] != null) {
+                sb.append('"');
                 sb.append(fields[i]);
+                sb.append('"');
+            }
         }
 
         return sb.toString();
